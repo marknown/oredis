@@ -89,7 +89,7 @@ func GetPoolInstance(config Config) *redis.Pool {
 	return nil
 }
 
-// GetInstance 从 Redis 连接池获取一个redis连接
+// GetInstance get a redis instance from redis pool
 func GetInstance(config Config) redis.Conn {
 	// 初始化连接池
 	redisPool := GetPoolInstance(config)
@@ -102,11 +102,11 @@ func GetInstance(config Config) redis.Conn {
 		return rc
 	}
 
-	// fmt.Println("Error " + rc.Err().Error())
-
 	// 失败重连 connection reset by peer
 	retryTimes := 10
 	for i := 0; i < retryTimes; i++ {
+		time.Sleep(50 * time.Millisecond)
+
 		rc = GetInstance(config)
 		if nil == rc.Err() {
 			return rc
@@ -114,5 +114,21 @@ func GetInstance(config Config) redis.Conn {
 	}
 
 	// 错误的 rc 也返回
+	return rc
+}
+
+// GetInstancePanic panic when error occurred
+func GetInstancePanic(config Config) redis.Conn {
+	// 初始化连接池
+	redisPool := GetPoolInstance(config)
+
+	// 从池里获取连接
+	rc := redisPool.Get()
+	// defer rc.Close()
+
+	if nil != rc.Err() {
+		panic("Redis " + rc.Err().Error())
+	}
+
 	return rc
 }
